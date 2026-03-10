@@ -1,5 +1,7 @@
 # Desafio MBA Engenharia de Software com IA - Full Cycle
 
+Descreva abaixo como executar a sua solução.
+
 ---
 
 ## 🚀 RAG Pipeline: Semantic Search CLI with LangChain & pgVector
@@ -12,6 +14,8 @@
 *(🇺🇸 English version below | 🇧🇷 Versão em português abaixo)*
 
 ---
+
+## 🇺🇸 English
 
 ### 📌 Overview
 This repository contains a full **Retrieval-Augmented Generation (RAG)** pipeline developed as a technical challenge for the AI Software Engineering MBA (Full Cycle). The system ingests a PDF document and saves its information in a PostgreSQL database with the pgVector extension. It provides a Command Line Interface (CLI) for users to ask questions and receive answers based strictly on the PDF content.
@@ -34,31 +38,44 @@ Clone the repository and set up your environment variables:
 ```bash
 cp .env.example .env
 ```
-*Note: Make sure to fill in your API keys and the exact PDF path in the `.env` file.*
+*Note: Make sure to open the generated `.env` file and fill in your `OPENAI_API_KEY`. (The PDF path and local database credentials should already be filled by default).*
 
 **3. Start the Infrastructure**
-Spin up the PostgreSQL database with the pgVector extension:
+Spin up the PostgreSQL database with the pgVector extension locally:
 ```bash
 docker compose up -d
 ```
 
 **4. Python Virtual Environment**
-Create and activate your virtual environment, then install dependencies:
+Create the virtual environment to isolate the project's libraries:
 ```bash
 python3 -m venv venv
-source venv/bin/activate
+```
+
+Activate the virtual environment:
+* **Linux/Mac/WSL:**
+  ```bash
+  source venv/bin/activate
+  ```
+* **Windows (PowerShell/CMD):**
+  ```bash
+  venv\Scripts\activate
+  ```
+
+With the environment activated, upgrade pip and install the dependencies:
+```bash
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
 **5. Data Ingestion**
-Execute the ingestion script to read the PDF, generate embeddings, and store the vectors:
+Execute the ingestion script to read the PDF, generate embeddings, and store the vectors in the database:
 ```bash
 python src/ingest.py
 ```
 
 **6. Start the CLI Chat**
-Run the semantic search interface:
+Run the interactive semantic search interface in your terminal to ask questions:
 ```bash
 python src/chat.py
 ```
@@ -68,7 +85,7 @@ python src/chat.py
 ## 🇧🇷 Português
 
 ### 📌 Sobre o Projeto
-Este repositório contém um pipeline completo de **Geração Aumentada por Recuperação (RAG)**, desenvolvido como um desafio técnico para o MBA em Engenharia de Software com IA (Full Cycle). O sistema ingere um documento PDF e salva suas informações em um banco de dados PostgreSQL com a extensão pgVector. Ele fornece uma Interface de Linha de Comando (CLI) para que os usuários façam perguntas e recebam respostas baseadas estritamente no conteúdo do PDF.
+Este repositório contém um pipeline completo de **Retrieval-Augmented Generation (RAG)**. O sistema realiza a ingestão de um arquivo PDF e salva suas informações em um banco de dados PostgreSQL com extensão pgVector. Além disso, permite que o usuário faça perguntas via linha de comando (CLI) e receba respostas baseadas apenas no conteúdo do PDF.
 
 ### 🏗️ Tecnologias Utilizadas
 - **Linguagem:** Python
@@ -88,31 +105,44 @@ Clone o repositório e configure suas variáveis de ambiente:
 ```bash
 cp .env.example .env
 ```
-*Nota: Não se esqueça de preencher suas chaves de API e o nome do PDF no arquivo `.env`.*
+*Nota: Abra o arquivo `.env` gerado e preencha a sua `OPENAI_API_KEY`. (O caminho do PDF e as credenciais locais do banco de dados já devem vir preenchidas por padrão no arquivo).*
 
 **3. Subir a Infraestrutura**
-Inicie o banco de dados PostgreSQL com pgVector via Docker:
+Inicie o banco de dados PostgreSQL com a extensão pgVector localmente:
 ```bash
 docker compose up -d
 ```
 
 **4. Ambiente Virtual Python**
-Crie e ative o ambiente virtual, e instale as dependências:
+Crie o ambiente virtual para isolar as bibliotecas do projeto:
 ```bash
 python3 -m venv venv
-source venv/bin/activate
+```
+
+Ative o ambiente virtual:
+* **No Linux/Mac/WSL:**
+  ```bash
+  source venv/bin/activate
+  ```
+* **No Windows (PowerShell/CMD):**
+  ```bash
+  venv\Scripts\activate
+  ```
+
+Com o ambiente ativado, atualize o instalador e baixe as dependências:
+```bash
 python -m pip install --upgrade pip
 pip install -r requirements.txt
 ```
 
 **5. Ingestão de Dados**
-Execute a ingestão do PDF para fatiar o texto, gerar os embeddings e salvar no banco de dados:
+Execute o script de ingestão. Ele lerá o PDF, fatiará o texto, gerará os embeddings na OpenAI e salvará os vetores no banco de dados:
 ```bash
 python src/ingest.py
 ```
 
 **6. Iniciar o Chat CLI**
-Rode a interface interativa de busca semântica para fazer suas perguntas:
+Rode a interface interativa no terminal para fazer perguntas sobre o documento:
 ```bash
 python src/chat.py
 ```
