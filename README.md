@@ -85,7 +85,7 @@ python src/chat.py
 ## 🇧🇷 Português
 
 ### 📌 Sobre o Projeto
-Este repositório contém um pipeline completo de **Retrieval-Augmented Generation (RAG)**. O sistema realiza a ingestão de um arquivo PDF e salva suas informações em um banco de dados PostgreSQL com extensão pgVector. Além disso, permite que o usuário faça perguntas via linha de comando (CLI) e receba respostas baseadas apenas no conteúdo do PDF.
+Este repositório contém um pipeline completo de Geração Aumentada por Recuperação (RAG) desenvolvido como um desafio técnico para o MBA em Engenharia de Software com Inteligência Artificial (Full Cycle). O sistema ingere um documento PDF e salva suas informações em um banco de dados PostgreSQL com a extensão pgVector. Ele fornece uma Interface de Linha de Comando (CLI) para que os usuários façam perguntas e recebam respostas baseadas estritamente no conteúdo do PDF.
 
 ### 🏗️ Tecnologias Utilizadas
 - **Linguagem:** Python
