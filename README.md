@@ -24,7 +24,7 @@ Portuguese, so the prompt and the refusal sentence are in Portuguese too.
 
 ## Quickstart
 
-Requires Docker, Python 3.10–3.13 and an OpenAI API key.
+Requires Docker, Python 3.12 or newer (tested on 3.12 and 3.14) and an OpenAI API key.
 
 ```bash
 git clone https://github.com/interss/rag-pdf-semantic-search.git

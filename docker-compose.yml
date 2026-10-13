@@ -1,7 +1,6 @@
 services:
   postgres:
     image: pgvector/pgvector:pg17
-    container_name: postgres_rag
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: postgres
