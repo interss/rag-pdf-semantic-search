@@ -5,64 +5,48 @@ from langchain_text_splitters import RecursiveCharacterTextSplitter
 from langchain_postgres import PGVector
 from langchain_openai import OpenAIEmbeddings
 
-# 1. Loads variables from the .env file
-# 1. Carrega as variáveis do arquivo .env
+# Settings come from .env so no secret or path is hardcoded.
 load_dotenv()
 
-# 2. Fetches dynamic settings from .env (Clean Code & Security)
-# 2. Busca as configurações dinâmicas do .env (Clean Code & Segurança)
 PDF_PATH = os.getenv("PDF_PATH", "document.pdf")
 CONNECTION_STRING = os.getenv("DATABASE_URL")
 COLLECTION_NAME = os.getenv("PG_VECTOR_COLLECTION_NAME")
-MODELO_EMBEDDING = os.getenv("OPENAI_EMBEDDING_MODEL")
+EMBEDDING_MODEL = os.getenv("OPENAI_EMBEDDING_MODEL")
+
 
 def ingest_pdf():
-    """
-    Main ingestion function: Reads the PDF, chunks it, and saves it to the vector database.
-    Função principal de ingestão: Lê o PDF, fatia e salva no banco de dados vetorial.
-    """
-    print(f"Iniciando a ingestão do arquivo: {PDF_PATH}...")
-    
-    # Security validation: Checks if the file exists before attempting to open it
-    # Validação de segurança: Verifica se o arquivo existe antes de tentar abrir
+    """Read the PDF, split it into chunks and store their embeddings in pgVector."""
+    print(f"Ingesting {PDF_PATH}...")
+
     if not os.path.exists(PDF_PATH):
-        print(f"Erro: O arquivo {PDF_PATH} não foi encontrado na raiz do projeto.")
+        print(f"Error: {PDF_PATH} not found in the project root.")
         return
 
-    # 3. Loads the raw text from the PDF
-    # 3. Carrega o texto bruto do PDF
-    loader = PyPDFLoader(PDF_PATH)
-    documentos = loader.load()
+    documents = PyPDFLoader(PDF_PATH).load()
 
-    # 4. Chunks the text (Split)
-    # 4. Fatia o texto (Split)
-    print("Fatiando o documento...")
+    print("Splitting the document...")
     text_splitter = RecursiveCharacterTextSplitter(
         chunk_size=1000,
-        chunk_overlap=150
+        chunk_overlap=150,
     )
-    chunks = text_splitter.split_documents(documentos)
-    print(f"O documento foi dividido em {len(chunks)} pedaços.")
+    chunks = text_splitter.split_documents(documents)
+    print(f"Split into {len(chunks)} chunks.")
 
-    # 5. Configures the Embeddings model using the variable from .env
-    # 5. Configura o modelo de Embeddings usando a variável do .env
-    embeddings = OpenAIEmbeddings(model=MODELO_EMBEDDING)
+    embeddings = OpenAIEmbeddings(model=EMBEDDING_MODEL)
 
-    # 6. Saves to the Database with Idempotency
-    # 6. Salva no Banco de Dados com Idempotência
-    print("Vetorizando e salvando no PostgreSQL (pgVector)...")
+    print("Embedding and saving to PostgreSQL (pgVector)...")
     vector_store = PGVector(
         embeddings=embeddings,
         collection_name=COLLECTION_NAME,
         connection=CONNECTION_STRING,
         use_jsonb=True,
-        # Clears the old vectors of the document before inserting the new ones
-        # Limpa os vetores antigos do documento antes de inserir os novos
-        pre_delete_collection=True 
+        # Idempotent: drop the previous vectors so re-running never duplicates chunks.
+        pre_delete_collection=True,
     )
-    
+
     vector_store.add_documents(chunks)
-    print("Ingestão concluída com sucesso! Vetores atualizados no banco de forma limpa.")
+    print("Ingestion complete.")
+
 
 if __name__ == "__main__":
     ingest_pdf()

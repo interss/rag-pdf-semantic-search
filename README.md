@@ -1,148 +1,99 @@
-# Desafio MBA Engenharia de Software com IA - Full Cycle
+# RAG PDF Semantic Search
 
-Descreva abaixo como executar a sua solução.
+**Ask questions about a PDF from the terminal and get answers grounded only in that
+document.** A retrieval-augmented generation (RAG) pipeline built with LangChain,
+PostgreSQL + pgVector and OpenAI.
 
----
+Built as the ingestion-and-search challenge of the Full Cycle MBA in AI Software
+Engineering. The starter template (Docker setup, sample PDF, file skeleton) is
+[devfullcycle/mba-ia-desafio-ingestao-busca](https://github.com/devfullcycle/mba-ia-desafio-ingestao-busca);
+the ingestion, retrieval, prompt and chat code are mine.
 
-## 🚀 RAG Pipeline: Semantic Search CLI with LangChain & pgVector
+## How it works
 
-![Python](https://img.shields.io/badge/Python-3.11+-blue.svg)
-![LangChain](https://img.shields.io/badge/LangChain-Integration-green)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-pgVector-blue)
-![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg)
+1. **Ingest** (`src/ingest.py`): load the PDF, split it into 1,000-character chunks with
+   150 characters of overlap, embed each chunk and store it in pgVector. Re-running is
+   idempotent: the collection is cleared before inserting, so chunks never duplicate.
+2. **Retrieve** (`src/search.py`): embed the question and fetch the 10 most similar chunks.
+3. **Answer** (`src/chat.py`): send the retrieved context plus the question to the LLM with
+   strict rules: answer only from the context, and reply with a fixed refusal sentence
+   when the answer is not in the document.
 
-*(🇺🇸 English version below | 🇧🇷 Versão em português abaixo)*
+The sample PDF is a fictional table of companies, revenues and founding years, in
+Portuguese, so the prompt and the refusal sentence are in Portuguese too.
 
----
+## Quickstart
 
-## 🇺🇸 English
+Requires Docker, Python 3.10–3.13 and an OpenAI API key.
 
-### 📌 Overview
-This repository contains a full **Retrieval-Augmented Generation (RAG)** pipeline developed as a technical challenge for the AI Software Engineering MBA (Full Cycle). The system ingests a PDF document and saves its information in a PostgreSQL database with the pgVector extension. It provides a Command Line Interface (CLI) for users to ask questions and receive answers based strictly on the PDF content.
-
-### 🏗️ Tech Stack
-- **Language:** Python
-- **Framework:** LangChain
-- **Database:** PostgreSQL + pgVector
-- **Infrastructure:** Docker & Docker Compose
-
-### ⚙️ How to Run
-
-**1. Prerequisites**
-- Docker Desktop installed and running.
-- Python 3 installed.
-- API Key from OpenAI or Google Gemini.
-
-**2. Setup**
-Clone the repository and set up your environment variables:
 ```bash
-cp .env.example .env
-```
-*Note: Make sure to open the generated `.env` file and fill in your `OPENAI_API_KEY`. (The PDF path and local database credentials should already be filled by default).*
+git clone https://github.com/interss/rag-pdf-semantic-search.git
+cd rag-pdf-semantic-search
+cp .env.example .env          # then set OPENAI_API_KEY; the other defaults already match docker-compose
+docker compose up -d          # PostgreSQL 17 with the pgVector extension
 
-**3. Start the Infrastructure**
-Spin up the PostgreSQL database with the pgVector extension locally:
-```bash
-docker compose up -d
-```
-
-**4. Python Virtual Environment**
-Create the virtual environment to isolate the project's libraries:
-```bash
-python3 -m venv venv
-```
-
-Activate the virtual environment:
-* **Linux/Mac/WSL:**
-  ```bash
-  source venv/bin/activate
-  ```
-* **Windows (PowerShell/CMD):**
-  ```bash
-  venv\Scripts\activate
-  ```
-
-With the environment activated, upgrade pip and install the dependencies:
-```bash
-python -m pip install --upgrade pip
+python -m venv venv
+source venv/bin/activate      # Windows: venv\Scripts\activate
 pip install -r requirements.txt
+
+python src/ingest.py          # load the PDF into pgVector
+python src/chat.py            # ask questions; type "exit" to quit
 ```
 
-**5. Data Ingestion**
-Execute the ingestion script to read the PDF, generate embeddings, and store the vectors in the database:
-```bash
-python src/ingest.py
+Expected behavior (illustrative, not a recorded run):
+
+```
+QUESTION: Qual o faturamento da Alfa Energia S.A.?
+ANSWER: R$ 722.875.391,46.
+
+QUESTION: Qual é a capital da França?
+ANSWER: Não tenho informações necessárias para responder sua pergunta.
 ```
 
-**6. Start the CLI Chat**
-Run the interactive semantic search interface in your terminal to ask questions:
+## Configuration
+
+All settings live in `.env` (see [`.env.example`](.env.example)):
+
+| Variable | Default | Purpose |
+|---|---|---|
+| `OPENAI_API_KEY` | (empty) | Required |
+| `OPENAI_EMBEDDING_MODEL` | `text-embedding-3-small` | Embedding model |
+| `OPENAI_LLM_MODEL` | `gpt-5-nano` | Chat model |
+| `DATABASE_URL` | local Docker database | pgVector connection string |
+| `PG_VECTOR_COLLECTION_NAME` | `document_chunks` | Collection that stores the chunks |
+| `PDF_PATH` | `document.pdf` | Document to ingest |
+
+## Tests
+
+The prompt-building logic is tested with a fake retriever, so no database, network or API
+key is needed:
+
 ```bash
-python src/chat.py
+pip install pytest
+python -m pytest
 ```
 
----
+## Design choices
 
-## 🇧🇷 Português
+- **Grounded answers over helpful guesses.** The prompt forbids outside knowledge and
+  opinions, with few-shot examples of questions that must be refused.
+- **Idempotent ingestion.** `pre_delete_collection=True` makes re-ingesting safe.
+- **No hardcoded secrets.** Keys and connection strings come from `.env`, which is
+  git-ignored; the chat exits with a clear message when the key is missing.
+- **Testable retrieval.** `search_prompt` accepts the retriever as a parameter, so the
+  prompt can be tested without pgVector.
 
-### 📌 Sobre o Projeto
-Este repositório contém um pipeline completo de Geração Aumentada por Recuperação (RAG) desenvolvido como um desafio técnico para o MBA em Engenharia de Software com Inteligência Artificial (Full Cycle). O sistema ingere um documento PDF e salva suas informações em um banco de dados PostgreSQL com a extensão pgVector. Ele fornece uma Interface de Linha de Comando (CLI) para que os usuários façam perguntas e recebam respostas baseadas estritamente no conteúdo do PDF.
+## Repository layout
 
-### 🏗️ Tecnologias Utilizadas
-- **Linguagem:** Python
-- **Framework:** LangChain
-- **Banco de Dados:** PostgreSQL + pgVector
-- **Infraestrutura:** Docker & Docker Compose
-
-### ⚙️ Como Executar
-
-**1. Pré-requisitos**
-- Docker Desktop instalado e rodando.
-- Python 3 instalado.
-- Chave de API da OpenAI ou Google Gemini.
-
-**2. Configuração Inicial**
-Clone o repositório e configure suas variáveis de ambiente:
-```bash
-cp .env.example .env
 ```
-*Nota: Abra o arquivo `.env` gerado e preencha a sua `OPENAI_API_KEY`. (O caminho do PDF e as credenciais locais do banco de dados já devem vir preenchidas por padrão no arquivo).*
-
-**3. Subir a Infraestrutura**
-Inicie o banco de dados PostgreSQL com a extensão pgVector localmente:
-```bash
-docker compose up -d
-```
-
-**4. Ambiente Virtual Python**
-Crie o ambiente virtual para isolar as bibliotecas do projeto:
-```bash
-python3 -m venv venv
-```
-
-Ative o ambiente virtual:
-* **No Linux/Mac/WSL:**
-  ```bash
-  source venv/bin/activate
-  ```
-* **No Windows (PowerShell/CMD):**
-  ```bash
-  venv\Scripts\activate
-  ```
-
-Com o ambiente ativado, atualize o instalador e baixe as dependências:
-```bash
-python -m pip install --upgrade pip
-pip install -r requirements.txt
-```
-
-**5. Ingestão de Dados**
-Execute o script de ingestão. Ele lerá o PDF, fatiará o texto, gerará os embeddings na OpenAI e salvará os vetores no banco de dados:
-```bash
-python src/ingest.py
-```
-
-**6. Iniciar o Chat CLI**
-Rode a interface interativa no terminal para fazer perguntas sobre o documento:
-```bash
-python src/chat.py
+.
+├── src/
+│   ├── ingest.py        PDF → chunks → embeddings → pgVector
+│   ├── search.py        similarity search + prompt template
+│   └── chat.py          interactive CLI
+├── tests/               unit tests (no network)
+├── document.pdf         sample document (from the challenge template)
+├── docker-compose.yml   PostgreSQL + pgVector
+├── requirements.txt
+└── .env.example
 ```
